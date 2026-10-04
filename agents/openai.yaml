@@ -1,0 +1,4 @@
+interface:
+  display_name: "每日菜谱推荐"
+  short_description: "每日智能推荐菜谱：可展开做法、可刷新、可图钉/收藏的单文件页面"
+  default_prompt: "帮我推荐今天的三餐菜单，生成菜谱页面"

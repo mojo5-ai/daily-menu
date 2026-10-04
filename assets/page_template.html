@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今日菜谱</title>
+<style>
+:root{
+  --bg:#f6f4ef; --card:#fffdf9; --ink:#2a2620; --sub:#8d8577; --line:#e6e0d2;
+  --accent:#d96c2f; --accent-ink:#fff; --green:#3f9d5d; --gold:#e0a100; --soft:#fbeee4;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;line-height:1.55}
+
+header{position:sticky;top:0;z-index:20;background:#fffdf9ee;border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.head-inner{max-width:860px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px 14px;padding:12px 16px 10px;flex-wrap:wrap}
+.head-brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pu{width:64px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;background:#c73e2e;color:#fff6ec;text-decoration:none;border-radius:10px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.28);font-family:"Kaiti SC","STKaiti","KaiTi","DFKai-SB","TW-Kai",serif;font-size:38px;font-weight:700;line-height:1;transition:background .15s,transform .12s}
+.pu:hover{background:#b23222;transform:scale(1.04)}
+.head-mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:180px}
+.head-mid .btn{text-align:center;min-width:150px}
+.head-side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.done-date{font-size:12px;color:var(--sub);margin:0 2px 4px}
+.done-date b{color:var(--ink);font-weight:600}
+.icon-btn{display:inline-flex;align-items:center;padding:8px 10px;font-size:15px}
+.head-meta{flex-basis:100%;display:flex;gap:8px;font-size:12px;color:var(--sub)}
+.head-meta .date{font-weight:600}
+.meta{font-size:12px;color:var(--sub)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;transition:background .15s,transform .1s}
+.btn:hover{background:var(--soft)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#c45e26}
+.badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--green);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.badge.zero{background:#c9c2b4}
+.step{display:inline-flex;align-items:center;gap:6px}
+.step button{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:14px;line-height:1;color:var(--ink);padding:0}
+.step button:hover{background:var(--soft)}
+.step button:active{transform:scale(.9)}
+.step .val{min-width:20px;text-align:center;font-weight:700;color:var(--ink);font-size:15px}
+
+main{max-width:860px;margin:0 auto;padding:16px 16px 64px}
+.slot{margin:22px 0}
+.slot-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.link-toggle{border:0;background:none;cursor:pointer;padding:3px;display:inline-flex;align-items:center;color:#c9c2b4;transition:color .15s,transform .1s;flex:none}
+.link-toggle:hover{transform:scale(1.15)}
+.link-toggle.on{color:#0ab8b3}
+.slot-head h2{font-size:15px;color:var(--sub);font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+.slot-head h2::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent);display:inline-block}
+.count{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);flex:none}
+.count input{width:46px;height:28px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0 6px;font-size:13px;color:var(--ink);text-align:center;-moz-appearance:textfield}
+.count input:focus{outline:none;border-color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.empty-slot{color:var(--sub);font-size:13px;padding:10px 2px;grid-column:1/-1}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.card-img{position:relative;height:150px;background:#efe8d9;overflow:hidden;flex:none}
+.card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.card-img.ph{display:flex;align-items:center;justify-content:center;background:#f1ebdf}
+.card-img.ph span{font-size:40px;font-weight:700;color:#c3b8a2}
+.card-head{display:flex;align-items:center;gap:8px;padding:10px 12px;flex-wrap:wrap}
+.dish-name{border:0;background:none;padding:0;cursor:pointer;font-size:15px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;flex:1;min-width:0;text-align:left}
+.dish-name .chev{font-size:11px;color:var(--sub);transition:transform .2s}
+.card.open .dish-name .chev{transform:rotate(180deg)}
+.cat-tag{font-size:11px;color:var(--sub);border:1px solid var(--line);border-radius:4px;padding:1px 6px;flex:none}
+.stars{color:var(--gold);font-size:12px;letter-spacing:1px;flex:none}
+.icons{display:flex;gap:2px;flex:none}
+.icon{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:4px;filter:grayscale(1);opacity:.35;transition:filter .15s,opacity .15s,transform .1s}
+.icon:hover{transform:scale(1.15);opacity:.8}
+.icon.on{filter:none;opacity:1}
+.icon.on:active{transform:scale(.9)}
+
+.card-body{display:none;border-top:1px dashed var(--line);padding:12px;background:#fbf9f4}
+.card.open .card-body{display:block}
+.card-body h3{font-size:13px;color:var(--sub);margin:10px 0 4px;font-weight:600}
+.card-body h3:first-child{margin-top:0}
+.card-body ul,.card-body ol{margin:0;padding-left:20px;font-size:13px}
+.card-body li{margin:3px 0}
+
+#fav-panel{position:fixed;top:0;right:0;bottom:0;width:min(430px,92vw);background:#fffdf9;border-left:1px solid var(--line);z-index:40;overflow-y:auto;padding:18px 16px 64px;box-shadow:-8px 0 24px rgba(0,0,0,.06);transform:translateX(100%);visibility:hidden;transition:transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s .3s}
+#fav-panel.open{transform:translateX(0);visibility:visible;transition:transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s}
+#fav-panel h2{font-size:17px;margin:0 0 4px}
+#fav-panel .sub{font-size:12px;color:var(--sub);margin-bottom:14px}
+#fav-close{position:sticky;top:0;float:right;margin:-6px -6px 0 0}
+.fav-group{margin:16px 0 6px}
+.fav-group h3{font-size:13px;color:var(--sub);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:4px;margin:0 0 8px}
+.fav-group .cards{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.fav-group .card-img{height:110px}
+.fav-empty{color:var(--sub);font-size:14px;padding:30px 4px;text-align:center}
+#backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
+#backdrop.show{opacity:1;pointer-events:auto}
+.done-tabs{display:flex;gap:8px;margin:12px 0 4px}
+.done-tabs button{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}
+.done-tabs button:hover{background:var(--soft)}
+.done-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.done-dates{font-size:12px;color:var(--sub);margin:0 0 6px}
+.done-dates b{color:var(--ink);font-weight:600;font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2a2620;color:#fff;font-size:13px;padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+.toast.show{opacity:.94}
+footer{max-width:860px;margin:0 auto;padding:0 16px 32px;color:var(--sub);font-size:11px}
+footer a{color:var(--sub)}
+@media (max-width:560px){
+ .head-inner{justify-content:flex-start}
+  .pu{width:52px;height:52px;font-size:30px}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card-img{height:104px}
+  .card-head{padding:8px 10px}
+  .icon{font-size:15px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-inner">
+    <a class="pu" href="https://howtocook.aiursoft.com/Dashboard/Index" target="_blank" rel="noopener" title="打开 HowToCook 菜谱站">谱</a>
+    <div class="head-mid">
+      <button class="btn primary" id="reco-btn" title="重新推荐今日菜单">✨ 今日推荐</button>
+      <span class="step" title="用餐人数：切换后按人数更新各餐菜量">
+        <button id="p-minus" aria-label="减少人数">−</button><span class="val" id="p-val">1</span><button id="p-plus" aria-label="增加人数">＋</button>
+      </span>
+    </div>
+    <div class="head-side">
+      <button class="btn icon-btn" id="fav-btn" title="收藏夹">❤️<span class="badge zero" id="fav-count">0</span></button>
+      <button class="btn icon-btn" id="done-btn" title="成就：✅ 完成记录">🏆<span class="badge zero" id="done-count">0</span></button>
+    </div>
+    <div class="head-meta"><span class="date" id="gen-date"></span><span class="meta" id="meta-line"></span></div>
+  </div>
+</header>
+<main id="menu-root"></main>
+<footer>菜谱来自 <a href="https://github.com/Anduin2017/HowToCook" target="_blank" rel="noopener">HowToCook</a> · 图钉 / 美味 / 收藏 / 完成 / 菜量 / 人数保存在本机浏览器 localStorage</footer>
+
+<div id="backdrop"></div>
+<aside id="fav-panel"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const DATASET = __DATASET__;
+const INITIAL_MENU = __MENU__;
+const META = __META__;
+
+const byId = {};
+DATASET.forEach(r => { byId[r.id] = r; });
+const SLOT_DEFS = [
+  { key: "早餐", cats: ["早餐"], fb: ["主食"] },
+  { key: "午餐", cats: ["荤菜", "素菜", "水产"], fb: [] },
+  { key: "晚餐", cats: ["荤菜", "素菜", "水产"], fb: [] },
+  { key: "汤", cats: ["汤"], fb: ["甜品"] },
+  { key: "甜品", cats: ["甜品"], fb: ["饮品"] },
+  { key: "小吃", cats: ["饮品"], fb: ["甜品"] },
+];
+const slots = SLOT_DEFS.filter(d => Object.prototype.hasOwnProperty.call(INITIAL_MENU, d.key));
+const slotByKey = Object.fromEntries(SLOT_DEFS.map(d => [d.key, d]));
+
+/* 🔗 sync-with-people toggle: default = 午餐/晚餐 linked (mirrors generation defaults) */
+const LINK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>';
+function isLinked(key) {
+  if (state.linked && typeof state.linked === "object" && key in state.linked) return !!state.linked[key];
+  return key === "午餐" || key === "晚餐";
+}
+
+/* ---------- state (localStorage) ---------- */
+const LS_KEY = "htc.state.v1";
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+    return {
+      pins: (s.pins || []).filter(id => byId[id]),
+      delicious: (s.delicious || []).filter(id => byId[id]),
+      favs: (s.favs || []).filter(id => byId[id]),
+      dones: (s.dones || []).filter(id => byId[id]),
+      people: (Number.isInteger(s.people) && s.people >= 1 && s.people <= 10) ? s.people : null,
+      slotCounts: (s.slotCounts && typeof s.slotCounts === "object") ? s.slotCounts : null,
+      linked: (s.linked && typeof s.linked === "object") ? s.linked : null,
+      doneDates: (s.doneDates && typeof s.doneDates === "object")
+        ? Object.fromEntries(Object.entries(s.doneDates).filter(([k]) => byId[k]))
+        : {},
+    };
+  } catch (e) { return { pins: [], delicious: [], favs: [], dones: [], people: null, slotCounts: null, linked: null, doneDates: {} }; }
+}
+let state = loadState();
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+}
+
+let menu = JSON.parse(JSON.stringify(INITIAL_MENU));
+
+/* ---------- helpers ---------- */
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function stars(n) {
+  if (n == null) return "";
+  n = Math.max(1, Math.min(5, n | 0));
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function ingLine(pair) {
+  const name = pair[0], text = pair[1];
+  const t = String(text == null ? "" : text).replace(/^[-•]\s*/, "").trim();
+  return t || String(name == null ? "" : name);
+}
+function currentPeople() { return state.people ?? META.people ?? 1; }
+function targetCount(key) {
+  if (state.slotCounts && Number.isInteger(state.slotCounts[key])) return state.slotCounts[key];
+  return (INITIAL_MENU[key] || []).length;
+}
+function pad2(n) { return String(n).padStart(2, "0"); }
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function dateLabel(iso) {
+  if (iso === "未知") return "未记录日期";
+  const t = todayISO();
+  if (iso === t) return "今天";
+  const yd = new Date(t + "T00:00:00");
+  yd.setDate(yd.getDate() - 1);
+  if (iso === yd.getFullYear() + "-" + pad2(yd.getMonth() + 1) + "-" + pad2(yd.getDate())) return "昨天";
+  const parts = iso.split("-");
+  const label = Number(parts[1]) + "月" + Number(parts[2]) + "日";
+  return parts[0] === String(new Date().getFullYear()) ? label : parts[0] + " 年 " + label;
+}
+
+/* ---------- picking ---------- */
+function allUsed() {
+  const used = new Set();
+  Object.values(menu).forEach(list => { if (Array.isArray(list)) list.forEach(id => used.add(id)); });
+  return used;
+}
+function fillSlot(key, want, used) {
+  const s = slotByKey[key];
+  for (const cats of [s.cats, s.fb]) {
+    while (menu[key].length < want) {
+      const cands = DATASET.filter(r => cats.includes(r.category) && !used.has(r.id));
+      if (!cands.length) break;
+      const pick = cands[(Math.random() * cands.length) | 0];
+      menu[key].push(pick.id);
+      used.add(pick.id);
+    }
+    if (menu[key].length >= want) break;
+  }
+}
+function trimSlot(key, want) {
+  while (menu[key].length > want) {
+    const last = menu[key].pop();
+    if (state.pins.includes(last)) { menu[key].push(last); break; } // pinned always kept
+  }
+}
+function pickAll() {
+  const pinned = new Set(state.pins);
+  const used = new Set();
+  for (const s of slots) {
+    menu[s.key] = (menu[s.key] || []).filter(id => pinned.has(id));
+    menu[s.key].forEach(id => used.add(id));
+  }
+  delete menu.__pins;
+  for (const s of slots) fillSlot(s.key, targetCount(s.key), used);
+  injectPinnedIntoMenu();
+}
+function adjustSlot(key) {
+  const others = new Set();
+  for (const s of slots) if (s.key !== key) (menu[s.key] || []).forEach(id => others.add(id));
+  (menu[key] = menu[key] || []).forEach(id => others.add(id));
+  trimSlot(key, targetCount(key));
+  fillSlot(key, Math.max(targetCount(key), menu[key].length), others);
+}
+function applyRemembered() {
+  const used = allUsed();
+  for (const s of slots) {
+    trimSlot(s.key, targetCount(s.key));
+    fillSlot(s.key, Math.max(targetCount(s.key), menu[s.key].length), used);
+  }
+  injectPinnedIntoMenu();
+}
+function injectPinnedIntoMenu() {
+  for (const id of state.pins) {
+    if (!byId[id]) continue;
+    if (Object.values(menu).some(list => Array.isArray(list) && list.includes(id))) continue;
+    const def = slotByKey[byId[id].category];
+    if (def && Object.prototype.hasOwnProperty.call(INITIAL_MENU, def.key)) {
+      menu[def.key].unshift(id);
+    } else {
+      (menu.__pins = menu.__pins || []).push(id);
+    }
+  }
+}
+
+/* ---------- rendering ---------- */
+function cardImg(r) {
+  if (r.img) {
+    return '<div class="card-img"><img src="' + esc(r.img) + '" alt="' + esc(r.name) +
+      '" loading="lazy" onerror="imgFail(this)"></div>';
+  }
+  return '<div class="card-img ph"><span>' + esc((r.name || "?").slice(0, 1)) + "</span></div>";
+}
+function imgFail(img) {
+  const holder = img.closest(".card-img") || img.parentElement;
+  const card = holder.closest(".card");
+  const name = card ? (card.querySelector(".dish-name-label")?.textContent || "") : "";
+  const ph = document.createElement("div");
+  ph.className = "card-img ph";
+  ph.innerHTML = "<span>" + esc(name.slice(0, 1)) + "</span>";
+  holder.replaceWith(ph);
+}
+function cardHTML(r) {
+  const ing = (r.ing || []).map(p => "<li>" + esc(ingLine(p)) + "</li>").join("");
+  const steps = (r.steps || []).map(p => "<li>" + esc(p[1]) + "</li>").join("");
+  const p = state.pins.includes(r.id) ? " on" : "";
+  const dl = state.delicious.includes(r.id) ? " on" : "";
+  const fv = state.favs.includes(r.id) ? " on" : "";
+  const dn = state.dones.includes(r.id) ? " on" : "";
+  return (
+    '<div class="card" data-id="' + esc(r.id) + '">' +
+      cardImg(r) +
+      '<div class="card-head">' +
+        '<button class="dish-name" aria-expanded="false"><span class="dish-name-label">' + esc(r.name) + '</span><span class="chev">▾</span></button>' +
+        (r.category ? '<span class="cat-tag">' + esc(r.category) + "</span>" : "") +
+        (stars(r.difficulty) ? '<span class="stars" title="难度">' + stars(r.difficulty) + "</span>" : "") +
+        '<span class="icons">' +
+          '<button class="icon' + p + '" data-kind="pin" data-id="' + esc(r.id) + '" title="图钉：刷新 / 每日重新推荐时保留这道菜，再次点击取消">📌</button>' +
+          '<button class="icon' + dl + '" data-kind="delicious" data-id="' + esc(r.id) + '" title="美味：标记为喜欢">☺️</button>' +
+          '<button class="icon' + fv + '" data-kind="fav" data-id="' + esc(r.id) + '" title="收藏：加入收藏夹">❤️</button>' +
+          '<button class="icon' + dn + '" data-kind="done" data-id="' + esc(r.id) + '" title="完成：标记这道菜已做">✅</button>' +
+        "</span>" +
+      "</div>" +
+      '<div class="card-body">' +
+        (ing ? '<h3>制作原料</h3><ul>' + ing + "</ul>" : "") +
+        (steps ? '<h3>制作过程</h3><ol>' + steps + "</ol>" : "") +
+        (!ing && !steps ? '<p class="meta">暂无详细内容</p>' : "") +
+      "</div>" +
+    "</div>"
+  );
+}
+function renderMenu() {
+  const root = document.getElementById("menu-root");
+  const parts = [];
+  for (const s of slots) {
+    const ids = menu[s.key] || [];
+    const body = ids.length
+      ? ids.map(id => (byId[id] ? cardHTML(byId[id]) : "")).join("")
+      : '<p class="empty-slot">该餐位当前 0 道菜（可在右侧数量框调整，菜都被忌口过滤时也会显示这里）。</p>';
+    const linked = isLinked(s.key);
+    const linkBtn =
+      '<button class="link-toggle' + (linked ? " on" : "") + '" data-slot="' + s.key + '" ' +
+      'title="' + (linked ? "已同步人数：改人数时菜量随之变化" : "未同步人数：点亮后，改人数时菜量跟随") + '">' +
+      LINK_SVG + "</button>";
+    parts.push(
+      '<section class="slot" data-slot="' + s.key + '">' +
+      '<div class="slot-head">' + linkBtn + "<h2>" + s.key + "</h2>" +
+      '<label class="count"><input class="count-input" type="number" min="0" max="8" step="1" value="' + ids.length + '" data-slot="' + s.key + '" title="本餐位菜数，刷新 / 重新推荐时保持不变"> 道</label>' +
+      "</div>" +
+      '<div class="cards">' + body + "</div>" +
+      "</section>"
+    );
+  }
+  const orphans = (menu.__pins || []).filter(id => byId[id] && !slots.some(s => menu[s.key].includes(id)));
+  if (orphans.length) {
+    parts.push('<section class="slot"><div class="slot-head"><h2>📌 图钉保留</h2></div>' +
+      '<div class="cards">' + orphans.map(id => cardHTML(byId[id])).join("") + "</div></section>");
+  }
+  root.innerHTML = parts.join("");
+  syncIconStates();
+}
+
+/* ---------- actions ---------- */
+function refresh() {
+  pickAll();
+  renderMenu();
+  toast("已重新推荐 · 📌 图钉菜品不变，菜量按你设置的数量");
+}
+function changePeople(delta) {
+  const p = Math.max(1, Math.min(10, currentPeople() + delta));
+  if (p === currentPeople()) return;
+  state.people = p;
+  // only 🔗-linked slots scale with people; unlinked slots keep their current counts
+  state.slotCounts = state.slotCounts || {};
+  let anyLinked = false;
+  for (const s of slots) {
+    if (isLinked(s.key)) {
+      state.slotCounts[s.key] = p;
+      adjustSlot(s.key);
+      anyLinked = true;
+    }
+  }
+  saveState();
+  renderMenu();
+  renderPeople();
+  toast(anyLinked ? "已按 " + p + " 人更新 🔗 同步餐位的菜量" : "已按 " + p + " 人更新（当前没有 🔗 同步餐位）");
+}
+function toggleLink(key) {
+  state.linked = state.linked || {};
+  state.linked[key] = !isLinked(key);
+  if (state.linked[key]) {
+    // linking on: immediately sync this slot to the current people count
+    state.slotCounts = state.slotCounts || {};
+    state.slotCounts[key] = currentPeople();
+    adjustSlot(key);
+  }
+  saveState();
+  renderMenu();
+  toast(key + (state.linked[key] ? " 已同步人数" : " 已取消同步"));
+}
+function onSlotCountChange(e) {
+  const inp = e.target;
+  if (!inp.classList || !inp.classList.contains("count-input")) return;
+  const key = inp.dataset.slot;
+  let v = parseInt(inp.value, 10);
+  if (isNaN(v)) v = 1;
+  v = Math.max(0, Math.min(8, v));
+  inp.value = v;
+  state.slotCounts = state.slotCounts || {};
+  state.slotCounts[key] = v;
+  saveState();
+  adjustSlot(key);
+  renderMenu();
+}
+
+/* ---------- icons / state sync ---------- */
+function toggleIcon(kind, id) {
+  const key = kind === "pin" ? "pins" : kind === "delicious" ? "delicious" : kind === "done" ? "dones" : "favs";
+  const arr = state[key];
+  const i = arr.indexOf(id);
+  const wasOn = i >= 0;
+  if (wasOn) arr.splice(i, 1); else arr.push(id);
+  if (kind === "done") {
+    state.doneDates = state.doneDates || {};
+    if (wasOn) delete state.doneDates[id]; else state.doneDates[id] = todayISO();
+  }
+  saveState();
+  syncIconStates();
+  renderFavCount();
+  if (document.getElementById("fav-panel").classList.contains("open")) renderDrawer();
+  if (kind === "pin") toast(wasOn ? "已取消图钉，刷新时这道菜可变" : "已图钉：刷新时这道菜不变");
+  if (kind === "done") toast(wasOn ? "已取消完成标记" : "已标记完成 · 记入成就");
+}
+function syncIconStates() {
+  document.querySelectorAll(".icon").forEach(btn => {
+    const key = btn.dataset.kind === "pin" ? "pins" : btn.dataset.kind === "delicious" ? "delicious" : btn.dataset.kind === "done" ? "dones" : "favs";
+    btn.classList.toggle("on", state[key].includes(btn.dataset.id));
+  });
+}
+
+/* ---------- drawers (favourites / achievements) ---------- */
+let drawerMode = "fav";
+let doneView = "date";
+const FAV_ORDER = ["早餐", "主食", "荤菜", "素菜", "水产", "汤", "甜品", "饮料", "饮品", "半成品加工", "调料", "酱料", "其他"];
+function favGroups() {
+  const ids = state.favs.filter(id => byId[id]);
+  const groups = new Map();
+  for (const id of ids) {
+    const c = byId[id].category || "其他";
+    if (!groups.has(c)) groups.set(c, []);
+    groups.get(c).push(id);
+  }
+  const known = FAV_ORDER.filter(c => groups.has(c));
+  const rest = [...groups.keys()].filter(c => !known.includes(c));
+  return known.concat(rest).map(c => [c, groups.get(c)]);
+}
+function renderDrawer() {
+  const panel = document.getElementById("fav-panel");
+  if (drawerMode === "done") { renderDonePanel(panel); return; }
+  const groups = favGroups();
+  if (!groups.length) {
+    panel.innerHTML = '<button class="btn" id="fav-close">✕</button><h2>❤️ 收藏夹</h2><p class="sub">点击菜名旁的 ❤️ 即可收藏</p><p class="fav-empty">收藏夹还是空的。</p>';
+    return;
+  }
+  const html = groups.map(([cat, ids]) =>
+    '<div class="fav-group"><h3>' + esc(cat) + "（" + ids.length + "）</h3>" +
+    '<div class="cards">' + ids.map(id => cardHTML(byId[id])).join("") + "</div></div>"
+  ).join("");
+  panel.innerHTML =
+    '<button class="btn" id="fav-close">✕</button>' +
+    '<h2>❤️ 收藏夹</h2>' +
+    '<p class="sub">共 ' + state.favs.length + " 道菜 · 点菜名展开原料与做法</p>" + html;
+}
+function renderDonePanel(panel) {
+  const ids = state.dones.filter(id => byId[id]);
+  const head =
+    '<button class="btn" id="fav-close">✕</button>' +
+    '<h2>🏆 成就</h2>' +
+    '<p class="sub">共 ' + ids.length + ' 道 ✅ · 点菜名展开原料与做法</p>' +
+    '<div class="done-tabs">' +
+      '<button data-v="date" class="' + (doneView === "date" ? "on" : "") + '">按日期</button>' +
+      '<button data-v="name" class="' + (doneView === "name" ? "on" : "") + '">按菜名</button>' +
+    '</div>';
+  if (!ids.length) {
+    panel.innerHTML = head + '<p class="fav-empty">还没有 ✅ 记录。点击菜名旁的 ✅ 标记完成。</p>';
+    return;
+  }
+  let body = "";
+  if (doneView === "date") {
+    const groups = new Map();
+    for (const id of ids) {
+      const d = (state.doneDates && state.doneDates[id]) || "未知";
+      if (!groups.has(d)) groups.set(d, []);
+      groups.get(d).push(id);
+    }
+    const known = [...groups.keys()].filter(d => d !== "未知").sort().reverse();
+    if (groups.has("未知")) known.push("未知");
+    body = known.map(d =>
+      '<div class="fav-group"><h3>' + esc(dateLabel(d)) + "</h3>" +
+      '<div class="cards">' + groups.get(d).map(id => cardHTML(byId[id])).join("") + "</div></div>"
+    ).join("");
+  } else {
+    body = ids.map(id => {
+      const r = byId[id];
+      const d = (state.doneDates && state.doneDates[id]) || "未知";
+      return '<div class="fav-group"><div class="done-dates"><b>' + esc(r.name) + "</b> · ✅ " + esc(dateLabel(d)) + "</div>" +
+        cardHTML(r) + "</div>";
+    }).join("");
+  }
+  panel.innerHTML = head + body;
+}
+function renderFavCount() {
+  const el = document.getElementById("fav-count");
+  el.textContent = state.favs.length;
+  el.classList.toggle("zero", !state.favs.length);
+  const dl = document.getElementById("done-count");
+  dl.textContent = state.dones.length;
+  dl.classList.toggle("zero", !state.dones.length);
+}
+function toggleDrawer(open, mode) {
+  const panel = document.getElementById("fav-panel");
+  const back = document.getElementById("backdrop");
+  if (mode) drawerMode = mode;
+  const willOpen = open === undefined ? !panel.classList.contains("open") : open;
+  if (willOpen) renderDrawer();
+  panel.classList.toggle("open", willOpen);
+  back.classList.toggle("show", willOpen);
+}
+
+/* ---------- chrome ---------- */
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function renderPeople() {
+  document.getElementById("p-val").textContent = currentPeople();
+}
+function metaLine() {
+  const bits = [];
+  if ((META.avoid || []).length) bits.push("忌口：" + META.avoid.join("、"));
+  if ((META.allergies || []).length) bits.push("过敏：" + META.allergies.join("、"));
+  if (META.data_from) bits.push("菜谱数据 " + META.data_from);
+  document.getElementById("meta-line").textContent = bits.join(" · ");
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const icon = e.target.closest(".icon");
+  if (icon) { toggleIcon(icon.dataset.kind, icon.dataset.id); return; }
+  const link = e.target.closest(".link-toggle");
+  if (link) { toggleLink(link.dataset.slot); return; }
+  const tab = e.target.closest(".done-tabs button");
+  if (tab) { doneView = tab.dataset.v; renderDrawer(); return; }
+  const name = e.target.closest(".dish-name");
+  if (name) {
+    const card = name.closest(".card");
+    const open = card.classList.toggle("open");
+    name.setAttribute("aria-expanded", open ? "true" : "false");
+    return;
+  }
+  if (e.target.closest("#p-plus")) { changePeople(+1); return; }
+  if (e.target.closest("#p-minus")) { changePeople(-1); return; }
+  if (e.target.closest("#fav-close")) { toggleDrawer(false); return; }
+});
+document.addEventListener("change", e => { onSlotCountChange(e); });
+document.getElementById("backdrop").addEventListener("click", () => toggleDrawer(false));
+document.getElementById("fav-btn").addEventListener("click", () => toggleDrawer(undefined, "fav"));
+document.getElementById("done-btn").addEventListener("click", () => toggleDrawer(undefined, "done"));
+document.getElementById("reco-btn").addEventListener("click", refresh);
+
+/* ---------- init ---------- */
+document.getElementById("gen-date").textContent = META.generated || "";
+metaLine();
+renderPeople();
+applyRemembered();
+renderMenu();
+renderFavCount();
+</script>
+</body>
+</html>
